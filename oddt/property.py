@@ -1,6 +1,7 @@
 """
 Module containg functions for prediction of molecular properies.
 """
+import numpy as np
 
 xlogp2_smarts = {
     # sp3 carbon
