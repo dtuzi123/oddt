@@ -625,6 +625,10 @@ class Bond(object):
     def isrotor(self):
         return self.OBBond.IsRotor()
 
+    @property
+    def isaromatic(self):
+        return self.OBBond.IsAromatic()
+
 
 class Residue(object):
     """Represent a Pybel residue.

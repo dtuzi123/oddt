@@ -1191,6 +1191,10 @@ class Bond(object):
                     return True
         return False
 
+    @property
+    def isaromatic(self):
+        return self.Bond.GetIsAromatic()
+
 
 class Residue(object):
     """Represent a RDKit residue.
