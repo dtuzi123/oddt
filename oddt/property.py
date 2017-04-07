@@ -9,7 +9,7 @@ XLOGP_SMARTS_1 = {
     '[!#7;!#8][CX4H3]': [0.528, 0.267],  # 1-2
     '[#7,#8][CX4H3]': [-0.032],  # 3
     '[!#7;!#8][CX4H2][!#7;!#8]': [0.358, -0.008, -0.185],  # 4-6
-    '[#7,#8][CX4H2]': [0.137, -0.303, -0.815],  # 7-9
+    '[#7,#8][CX4H2]': [-0.137, -0.303, -0.815],  # 7-9
     '[!#7;!#8][CX4H]([!#7;!#8])[!#7;!#8]': [0.127, -0.243, -0.499],  # 10-12
     '[#7,#8][CX4H]': [-0.205, -0.305, -0.709],  # 13-15
     '[!#7;!#8][CX4H0]([!#7;!#8])([!#7;!#8])[!#7;!#8]': [-0.006, -0.570, -0.317],  # 16-18
@@ -26,10 +26,10 @@ XLOGP_SMARTS_1 = {
     # aromatic carbon
     'c:[cH]:c': [0.337],  # 32
     'a:[cH]:n': [0.126],  # 33
-    'c:c([!#7;!#8]):c': [0.296],  # 34
-    'c:c([#7,#8]):c': [-0.151],  # 35
-    'a:c([!#7;!#8]):n': [0.174],  # 36
-    'a:c([#7,#8]):n': [0.366],  # 37
+    'c:[cH0]([!#7;!#8]):c': [0.296],  # 34
+    'c:[cH0]([#7,#8]):c': [-0.151],  # 35
+    'a:[cH0]([!#7;!#8]):n': [0.174],  # 36
+    'a:[cH0]([#7,#8]):n': [0.366],  # 37
 
     # sp carbon
     '[!#7;!#8]#[CH1]': [0.209],  # 38
@@ -43,14 +43,14 @@ XLOGP_SMARTS_1 = {
     '[!#7;!#8]@[NH]@[!#7;!#8]': [0.545],  # 46
     '[*]!@[NH]!@[#7,#8]': [0.324],  # 47
     '[*]@[NH]@[#7,#8]': [0.153],  # 48
-    '[!#7;!#8][NX3R0]([!#7;!#8])[!#7;!#8]': [0.159,  0.761],  # 49-50 ## not in ring
-    '[!#7;!#8][NX3R]([!#7;!#8])[!#7;!#8]': [0.881],  # 51 ## in ring
+    '[!#7;!#8][NX3H0R0]([!#7;!#8])[!#7;!#8]': [0.159,  0.761],  # 49-50 ## not in ring
+    '[!#7;!#8][NX3H0R]([!#7;!#8])[!#7;!#8]': [0.881],  # 51 ## in ring
     '[#7,#8][NX3H0R0]': [-0.239],  # 52 ## not in ring
     '[#7,#8][NX3H0R]': [-0.010],  # 53 ## in ring
 
     # amide nitrogen
     '[CX3]([NX3H2])(=[OX1])[#6]': [-0.646],  # 54
-    '[!#7;!#8][NX3H1][CX3](=[OX1])[#6]': [-0.096],  # 55
+    '[!#7;!#8][NH][CX3](=O)[#6]': [-0.096],  # 55
     '[#7,#8][NX3H1][CX3](=[OX1])[#6]': [-0.044],  # 56
     '[!#7;!#8][NX3H0]([!#7;!#8])[CX3](=[OX1])[#6]': [0.078],  # 57
     '[#7,#8][NX3H0]([!#7;!#8])[CX3](=[OX1])[#6]': [-0.118],  # 58
@@ -83,7 +83,7 @@ XLOGP_SMARTS_1 = {
     '[*][SX2H0][*]': [0.255],  # 77
 
     # sp2 sulfur
-    '[*]=S': [-0.148],  # 78
+    '[*]=[SX1]': [-0.148],  # 78
 
     # sulfoxide sulfur
     '[*][SX3](=O)-[*]': [-1.375],  # 79
@@ -141,8 +141,8 @@ XLOGP_SMARTS_2 = [
      'indicator': False,
      'coef': 0.580},
     # Indicator for alpha-amino acid
-    {'smarts': '[NX3,NX4+][CX4H,CX4H2][CX3](=[OX1])[O,N]',
-     'contrib_atoms': [0, 3],
+    {'smarts': '[NX3,NX4+][CX4H][*][CX3](=[OX1])[O,N]',
+     'contrib_atoms': [0, 4],
      'indicator': True,
      'coef': -2.166},
     # Indicator for salicylic acid
@@ -165,8 +165,16 @@ def xlogp2_atom_contrib(mol):
     SMARTS patterns are in such orther that the described atom is always second.
     Values are sorted by increasing Pi bonds numbers
     """
-    pi_count = [sum(bond.order > 1 or bond.isaromatic for bond in atom.bonds) for atom in mol]
+    # count Pi bonds in n=2 environment
+    pi_count = [sum(bond.order > 1 or bond.isaromatic
+                    for bond in atom.bonds) +
+                sum(bond.order > 1 or bond.isaromatic
+                    for neighbor in atom.neighbors
+                    for bond in neighbor.bonds)
+                for atom in mol]
     atom_contrib = np.zeros(len(pi_count))
+    total_matches = 0
+    matched_atoms = []
     for smarts, contrib in XLOGP_SMARTS_1.items():
         matches = oddt.toolkit.Smarts(smarts).findall(mol)
         if matches:
@@ -175,10 +183,15 @@ def xlogp2_atom_contrib(mol):
                 if oddt.toolkit.backend == 'ob':  # OB index is 1-based
                     m -= 1
                 assert m >= 0
+                if m in matched_atoms:  # Atoms should match only once
+                    continue
+                matched_atoms.append(m)
+                total_matches += 1
                 atom_contrib[m] = contrib[pi_count[m]] if len(contrib) > pi_count[m] else contrib[-1]
+    assert total_matches <= len(atom_contrib)
 
     # Hydrophobic carbon
-    atom_contrib[mol.atom_dict['ishydrophobe']] += 0.211
+    atom_contrib[mol.atom_dict['ishydrophobe'] & ~mol.atom_dict['isaromatic']] += 0.211
 
     for correction in XLOGP_SMARTS_2:
         matches = oddt.toolkit.Smarts(correction['smarts']).findall(mol)

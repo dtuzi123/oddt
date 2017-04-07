@@ -614,6 +614,10 @@ class Bond(object):
         self.OBBond = OBBond
 
     @property
+    def idx(self):
+        return self.OBBond.GetIdx()
+
+    @property
     def order(self):
         return self.OBBond.GetBondOrder()
 
