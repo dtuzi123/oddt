@@ -126,7 +126,7 @@ XLOGP_SMARTS_2 = [
      'indicator': False,
      'coef': 0.485},
     # Ortho sp3 oxygen pair
-    {'smarts': '[OX1,OX2]-!:aa-!:[OX1,OX2]',
+    {'smarts': '[OX1R0,OX2R0]-!:aa-!:[OX1R0,OX2R0]',
      'contrib_atoms': [0, 3],
      'indicator': False,
      'coef': -0.268},
