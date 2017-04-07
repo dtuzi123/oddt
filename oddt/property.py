@@ -189,7 +189,7 @@ def xlogp2_atom_contrib(mol):
                     if oddt.toolkit.backend == 'ob':  # OB index is 1-based
                         m -= 1
                     assert m >= 0
-                    atom_contrib[m] += correction['coef']
+                    atom_contrib[m] += correction['coef'] / float(len(correction['contrib_atoms']))
                     if correction['indicator']:
                         break
 
