@@ -2,8 +2,9 @@
 Module containg functions for prediction of molecular properies.
 """
 import numpy as np
+import oddt
 
-xlogp2_smarts = {
+XLOGP_SMARTS_1 = {
     # sp3 carbon
     '[!#7;!#8][CX4H3]': [0.528, 0.267],  # 1-2
     '[#7,#8][CX4H3]': [-0.032],  # 3
@@ -107,6 +108,28 @@ xlogp2_smarts = {
     '[*]I': [1.050, 1.050],  # 89-90
 }
 
+XLOGP_SMARTS_2 = {
+    # Internal H-bond
+    # http://www.daylight.com/dayhtml_tutorials/languages/smarts/smarts_examples.html#H_BOND
+    '[O,N;!H0]-*~*-*=[$([C,N;R0]=O)]': 0.429,
+    # Halogen 1-3 pairs
+    '[F,Cl,Br,I][*][F,Cl,Br,I]': 0.137,
+    # Aromatic nitrogen 1-4 pair
+    'n:*:*:n': 0.485,
+    # Ortho sp3 oxygen pair
+    '[OX1,OX2]-!:aa-!:[OX1,OX2]': -0.268,
+    # Para donor pair
+    '[O,N;!H0]-!:aaaa-!:[O,N;!H0]': -0.423,
+    # sp2 oxygen 1–5 pair
+    '[CX3](=O)-!:[*]-!:[CX3]=O': 0.580,
+    # Indicator for alpha-amino acid
+    '[NX3,NX4+][CX4H,CX4H2][CX3](=[OX1])[O,N]': -2.166,
+    # Indicator for salicylic acid
+    '[CX3](=[OX1])([O])-a:a-!:[OX1H]': 0.554,
+    # Indicator for p-amino sulfonic acid
+    '[SX4](=O)(=O)-c1ccc([NH2])cc1': -0.501,
+}
+
 
 def xlogp_atom_contrib(mol):
     """
@@ -117,7 +140,7 @@ def xlogp_atom_contrib(mol):
     """
     pi_count = [sum(bond.order > 1 or bond.isaromatic for bond in atom.bonds) for atom in mol]
     atom_contrib = np.zeros(len(pi_count))
-    for smarts, contrib in xlogp2_smarts.items():
+    for smarts, contrib in XLOGP_SMARTS_1.items():
         matches = oddt.toolkit.Smarts(smarts).findall(mol)
         if matches:
             for match in matches:
@@ -127,3 +150,20 @@ def xlogp_atom_contrib(mol):
                 assert m >= 0
                 atom_contrib[m] = contrib[pi_count[m]] if len(contrib) > pi_count[m] else contrib[-1]
     return atom_contrib
+
+
+def xlogp(mol):
+    """
+    Predict logP (xlogp2) coefficient using algorith described in publication
+    [https://dx.doi.org/10.1023/A:1008763405023]
+    """
+    xlogp_value = xlogp_atom_contrib(mol).sum()
+
+    # Hydrophobic carbon
+    xlogp_value += mol.atom_dict['ishydrophobe'].sum() * 0.211
+
+    for smarts, contrib in XLOGP_SMARTS_2.items():
+        matches = oddt.toolkit.Smarts(smarts).findall(mol)
+        if matches:
+            xlogp_value += len(matches) * contrib
+    return xlogp_value
