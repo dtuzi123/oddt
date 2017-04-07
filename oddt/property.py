@@ -108,30 +108,57 @@ XLOGP_SMARTS_1 = {
     '[*]I': [1.050, 1.050],  # 89-90
 }
 
-XLOGP_SMARTS_2 = {
+XLOGP_SMARTS_2 = [
     # Internal H-bond
     # http://www.daylight.com/dayhtml_tutorials/languages/smarts/smarts_examples.html#H_BOND
-    '[O,N;!H0]-*~*-*=[$([C,N;R0]=O)]': 0.429,
+    {'smarts': '[O,N;!H0]-*~*-*=[$([C,N;R0]=O)]',
+     'contrib_atoms': [0, 4],
+     'indicator': False,
+     'coef': 0.429},
     # Halogen 1-3 pairs
-    '[F,Cl,Br,I][*][F,Cl,Br,I]': 0.137,
+    {'smarts': '[F,Cl,Br,I][*][F,Cl,Br,I]',
+     'contrib_atoms': [0, 2],
+     'indicator': False,
+     'coef': 0.137},
     # Aromatic nitrogen 1-4 pair
-    'n:*:*:n': 0.485,
+    {'smarts': 'n:*:*:n',
+     'contrib_atoms': [0, 3],
+     'indicator': False,
+     'coef': 0.485},
     # Ortho sp3 oxygen pair
-    '[OX1,OX2]-!:aa-!:[OX1,OX2]': -0.268,
+    {'smarts': '[OX1,OX2]-!:aa-!:[OX1,OX2]',
+     'contrib_atoms': [0, 3],
+     'indicator': False,
+     'coef': -0.268},
     # Para donor pair
-    '[O,N;!H0]-!:aaaa-!:[O,N;!H0]': -0.423,
+    {'smarts': '[O,N;!H0]-!:aaaa-!:[O,N;!H0]',
+     'contrib_atoms': [0, 5],
+     'indicator': False,
+     'coef': -0.423},
     # sp2 oxygen 1–5 pair
-    '[CX3](=O)-!:[*]-!:[CX3]=O': 0.580,
+    {'smarts': '[CX3](=O)-!:[*]-!:[CX3]=O',
+     'contrib_atoms': [1, 4],
+     'indicator': False,
+     'coef': 0.580},
     # Indicator for alpha-amino acid
-    '[NX3,NX4+][CX4H,CX4H2][CX3](=[OX1])[O,N]': -2.166,
+    {'smarts': '[NX3,NX4+][CX4H,CX4H2][CX3](=[OX1])[O,N]',
+     'contrib_atoms': [0, 3],
+     'indicator': True,
+     'coef': -2.166},
     # Indicator for salicylic acid
-    '[CX3](=[OX1])([O])-a:a-!:[OX1H]': 0.554,
+    {'smarts': '[CX3](=[OX1])([O])-a:a-!:[OX1H]',
+     'contrib_atoms': [1, 5],
+     'indicator': True,
+     'coef': 0.554},
     # Indicator for p-amino sulfonic acid
-    '[SX4](=O)(=O)-c1ccc([NH2])cc1': -0.501,
-}
+    {'smarts': '[SX4](=O)(=O)-c1ccc([NH2])cc1',
+     'contrib_atoms': [0, 7],
+     'indicator': True,
+     'coef': -0.501},
+]
 
 
-def xlogp_atom_contrib(mol):
+def xlogp2_atom_contrib(mol):
     """
     Atoms contribution values taken from xlogp 2.0 publication:
     https://dx.doi.org/10.1023/A:1008763405023
@@ -149,21 +176,21 @@ def xlogp_atom_contrib(mol):
                     m -= 1
                 assert m >= 0
                 atom_contrib[m] = contrib[pi_count[m]] if len(contrib) > pi_count[m] else contrib[-1]
-    return atom_contrib
-
-
-def xlogp(mol):
-    """
-    Predict logP (xlogp2) coefficient using algorith described in publication
-    [https://dx.doi.org/10.1023/A:1008763405023]
-    """
-    xlogp_value = xlogp_atom_contrib(mol).sum()
 
     # Hydrophobic carbon
-    xlogp_value += mol.atom_dict['ishydrophobe'].sum() * 0.211
+    atom_contrib[mol.atom_dict['ishydrophobe']] += 0.211
 
-    for smarts, contrib in XLOGP_SMARTS_2.items():
-        matches = oddt.toolkit.Smarts(smarts).findall(mol)
+    for correction in XLOGP_SMARTS_2:
+        matches = oddt.toolkit.Smarts(correction['smarts']).findall(mol)
         if matches:
-            xlogp_value += len(matches) * contrib
-    return xlogp_value
+            for match in matches:
+                for contrib_idx in correction['contrib_atoms']:
+                    m = match[contrib_idx]
+                    if oddt.toolkit.backend == 'ob':  # OB index is 1-based
+                        m -= 1
+                    assert m >= 0
+                    atom_contrib[m] += correction['coef']
+                    if correction['indicator']:
+                        break
+
+    return atom_contrib
