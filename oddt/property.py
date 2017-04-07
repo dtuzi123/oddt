@@ -8,10 +8,10 @@ XLOGP_SMARTS_1 = {
     # sp3 carbon
     '[!#7;!#8][CX4H3]': [0.528, 0.267],  # 1-2
     '[#7,#8][CX4H3]': [-0.032],  # 3
-    '[!#7;!#8][CX4H2][!#7;!#8]': [0.358, -0.008, -0.185],  # 4-6
-    '[#7,#8][CX4H2]': [-0.137, -0.303, -0.815],  # 7-9
+    '[!#7;!#8][CX4H2,CX2][!#7;!#8]': [0.358, -0.008, -0.185],  # 4-6
+    '[#7,#8][CX4H2,CX2]': [-0.137, -0.303, -0.815],  # 7-9
     '[!#7;!#8][CX4H]([!#7;!#8])[!#7;!#8]': [0.127, -0.243, -0.499],  # 10-12
-    '[#7,#8][CX4H]': [-0.205, -0.305, -0.709],  # 13-15
+    '[#7,#8][CX4H,CX3]': [-0.205, -0.305, -0.709],  # 13-15
     '[!#7;!#8][CX4H0]([!#7;!#8])([!#7;!#8])[!#7;!#8]': [-0.006, -0.570, -0.317],  # 16-18
     '[#7,#8][CX4H0]': [-0.316, -0.723],  # 19-20
 
@@ -37,7 +37,7 @@ XLOGP_SMARTS_1 = {
     '[*]=[CX2H0]=[*]': [2.073],  # 40
 
     # sp3 nitrogen
-    '[!#7;!#8][NH2]': [-0.534, -0.329],  # 41-42
+    '[!#7;!#8]-,=[NH2]': [-0.534, -0.329],  # 41-42
     '[#7,#8][NH2]': [-1.082],  # 43
     '[!#7;!#8]!@[NH]!@[!#7;!#8]': [-0.112, 0.166],  # 44-45
     '[!#7;!#8]@[NH]@[!#7;!#8]': [0.545],  # 46
@@ -50,10 +50,10 @@ XLOGP_SMARTS_1 = {
 
     # amide nitrogen
     '[CX3]([NX3H2])(=[OX1])[#6]': [-0.646],  # 54
-    '[!#7;!#8][NH][CX3](=O)[#6]': [-0.096],  # 55
-    '[#7,#8][NX3H1][CX3](=[OX1])[#6]': [-0.044],  # 56
-    '[!#7;!#8][NX3H0]([!#7;!#8])[CX3](=[OX1])[#6]': [0.078],  # 57
-    '[#7,#8][NX3H0]([!#7;!#8])[CX3](=[OX1])[#6]': [-0.118],  # 58
+    '[!#7;!#8][NH]C(=O)[#6]': [-0.096],  # 55
+    '[#7,#8][NH]C(=O)[#6]': [-0.044],  # 56
+    '[!#7;!#8]N([!#7;!#8])C(=O)[#6]': [0.078],  # 57
+    '[#7,#8]N([!#7;!#8])[CX3](=[OX1])[#6]': [-0.118],  # 58
 
     # sp2 nitrogen
     'C=N[!#7;!#8]': [0.007, -0.275],  # 59-60
@@ -168,13 +168,12 @@ def xlogp2_atom_contrib(mol):
     # count Pi bonds in n=2 environment
     pi_count = [sum(bond.order > 1 or bond.isaromatic
                     for bond in atom.bonds) +
-                sum(bond.order > 1 or bond.isaromatic
+                sum(any(bond.order > 1 or bond.isaromatic
+                        for bond in neighbor.bonds)
                     for neighbor in atom.neighbors
-                    for bond in neighbor.bonds)
+                    if neighbor.atomicnum not in [16])  # skip S
                 for atom in mol]
     atom_contrib = np.zeros(len(pi_count))
-    total_matches = 0
-    matched_atoms = []
     for smarts, contrib in XLOGP_SMARTS_1.items():
         matches = oddt.toolkit.Smarts(smarts).findall(mol)
         if matches:
@@ -183,15 +182,10 @@ def xlogp2_atom_contrib(mol):
                 if oddt.toolkit.backend == 'ob':  # OB index is 1-based
                     m -= 1
                 assert m >= 0
-                if m in matched_atoms:  # Atoms should match only once
-                    continue
-                matched_atoms.append(m)
-                total_matches += 1
                 atom_contrib[m] = contrib[pi_count[m]] if len(contrib) > pi_count[m] else contrib[-1]
-    assert total_matches <= len(atom_contrib)
 
     # Hydrophobic carbon
-    atom_contrib[mol.atom_dict['ishydrophobe'] & ~mol.atom_dict['isaromatic']] += 0.211
+#     atom_contrib[mol.atom_dict['ishydrophobe'] & ~mol.atom_dict['isaromatic']] += 0.211
 
     for correction in XLOGP_SMARTS_2:
         matches = oddt.toolkit.Smarts(correction['smarts']).findall(mol)
