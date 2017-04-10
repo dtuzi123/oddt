@@ -173,12 +173,11 @@ def xlogp2_atom_contrib(mol):
     Values are sorted by increasing Pi bonds numbers
     """
     # count Pi bonds in n=2 environment
-    pi_count = [sum(bond.order > 1 or bond.isaromatic
-                    for bond in atom.bonds) +
+    pi_count = [sum(bond.isaromatic for bond in atom.bonds) +
                 sum(any(bond.order > 1 or bond.isaromatic
                         for bond in neighbor.bonds)
                     for neighbor in atom.neighbors
-                    if neighbor.atomicnum not in [16])  # skip S
+                    if neighbor.atomicnum in [6, 7])
                 for atom in mol]
     atom_contrib = np.zeros(len(pi_count))
     for smarts, contrib in XLOGP_SMARTS_1.items():
