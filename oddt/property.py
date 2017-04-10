@@ -6,7 +6,6 @@ import numpy as np
 import oddt
 
 
-
 XLOGP_SMARTS_1 = OrderedDict([
     # sp3 carbon
     ('[!#7;!#8;!#1][CX4H3]', [0.528, 0.267]),  # 1-2
@@ -112,6 +111,11 @@ XLOGP_SMARTS_1 = OrderedDict([
 ])
 
 XLOGP_SMARTS_2 = [
+    # Hydrophobic carbon
+    {'smarts': '[C;!$([#6][#7,#8,#15,#16]);!$([#6][*][#7,#8,#15,#16]);!$([#6][*][*][#7,#8,#15,#16])]',
+     'contrib_atoms': [0],
+     'indicator': False,
+     'coef': 0.211},
     # Internal H-bond
     # http://www.daylight.com/dayhtml_tutorials/languages/smarts/smarts_examples.html#H_BOND
     {'smarts': '[O,N;!H0]-*~*-*=[$([C,N;R0]=O)]',
@@ -186,9 +190,6 @@ def xlogp2_atom_contrib(mol):
                     m -= 1
                 assert m >= 0
                 atom_contrib[m] = contrib[pi_count[m]] if len(contrib) > pi_count[m] else contrib[-1]
-
-    # Hydrophobic carbon
-    # atom_contrib[mol.atom_dict['ishydrophobe'] & ~mol.atom_dict['isaromatic']] += 0.211
 
     for correction in XLOGP_SMARTS_2:
         matches = oddt.toolkit.Smarts(correction['smarts']).findall(mol)
