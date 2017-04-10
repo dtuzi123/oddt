@@ -142,7 +142,7 @@ XLOGP_SMARTS_2 = [
      'contrib_atoms': [0, 5],
      'indicator': False,
      'coef': -0.423},
-    # sp2 oxygen 1–5 pair
+    # sp2 oxygen 1-5 pair
     {'smarts': '[CX3](=O)-!:[*]-!:[CX3]=O',
      'contrib_atoms': [1, 4],
      'indicator': False,
