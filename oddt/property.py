@@ -184,7 +184,7 @@ def xlogp2_atom_contrib(mol):
     Values are sorted by increasing Pi bonds numbers
     """
     # count Pi bonds in n=2 environment
-    pi_count = [any(bond.order > 1 or bond.isaromatic for bond in atom.bonds) +
+    pi_count = [sum(bond.isaromatic for bond in atom.bonds) +
                 sum(any(bond.order > 1 or bond.isaromatic
                         for bond in neighbor.bonds)
                     for neighbor in atom.neighbors
