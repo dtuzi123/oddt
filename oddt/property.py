@@ -51,11 +51,11 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('[#7,#8][NX3H0R]', [-0.010]),  # 53 ## in ring
 
     # amide nitrogen
-    ('[CX3]([NX3H2])(=[OX1])[#6]', [-0.646]),  # 54
-    ('[!#7;!#8;!#1][NH1]C(=O)[#6]', [-0.096]),  # 55
+    ('[CX3]([NX3H2])(=[O,S])', [-0.646]),  # 54
+    ('[!#7;!#8;!#1][NH1]C(=[O,S])', [-0.096]),  # 55
     ('[#7,#8][NH]C(=O)[#6]', [-0.044]),  # 56
-    ('[!#7;!#8;!#1]N([!#7;!#8;!#1])C(=O)[#6]', [0.078]),  # 57
-    ('[#7,#8]N([!#7;!#8;!#1])[CX3](=[OX1])[#6]', [-0.118]),  # 58
+    ('[!#7;!#8;!#1]N([!#7;!#8;!#1])C(=O)', [0.078]),  # 57
+    ('[#7,#8]N([!#7;!#8;!#1])[CX3](=[OX1])', [-0.118]),  # 58
 
     # sp2 nitrogen
     ('C=N[!#7;!#8;!#1]', [0.007, -0.275]),  # 59-60
@@ -79,6 +79,7 @@ XLOGP_SMARTS_1 = OrderedDict([
 
     # sp2 oxygen
     ('[*]=O', [-0.399]),  # 75
+    ('[*]-[O-]', [-0.399]),  # 75
     ('[CX3](-O)=O', [-0.399]),  # 75
 
     # sp3 sulfur
@@ -113,13 +114,22 @@ XLOGP_SMARTS_1 = OrderedDict([
 
 XLOGP_SMARTS_2 = [
     # Hydrophobic carbon
-    {'smarts': '[C;!$([#6][#7,#8,#15,#16]);!$([#6][*][#7,#8,#15,#16]);!$([#6][*][*][#7,#8,#15,#16])]',
+    {'smarts': '[C;!$([#6]~[#7,#8,#15,#16]);'
+               '!$([#6]~[*]~[#7,#8,#15,#16]);'
+               '!$([#6]~[*]~[*]~[#7,#8,#15,#16])]',
      'contrib_atoms': [0],
      'indicator': False,
      'coef': 0.211},
     # Internal H-bond
-    # http://www.daylight.com/dayhtml_tutorials/languages/smarts/smarts_examples.html#H_BOND
-    {'smarts': '[O,N;!H0]-*~*-*=[$([C,N;R0]=O)]',
+    {'smarts': '[O,N;!H0]-*@*=[O,N]',
+     'contrib_atoms': [0, 3],
+     'indicator': False,
+     'coef': 0.429},
+    {'smarts': '[O,N;!H0]-*@*-C=[O,N]',
+     'contrib_atoms': [0, 4],
+     'indicator': False,
+     'coef': 0.429},
+    {'smarts': '[O,N;!H0]-C-*@*=[O,N]',
      'contrib_atoms': [0, 4],
      'indicator': False,
      'coef': 0.429},
@@ -174,7 +184,7 @@ def xlogp2_atom_contrib(mol):
     Values are sorted by increasing Pi bonds numbers
     """
     # count Pi bonds in n=2 environment
-    pi_count = [sum(bond.isaromatic for bond in atom.bonds) +
+    pi_count = [any(bond.order > 1 or bond.isaromatic for bond in atom.bonds) +
                 sum(any(bond.order > 1 or bond.isaromatic
                         for bond in neighbor.bonds)
                     for neighbor in atom.neighbors
