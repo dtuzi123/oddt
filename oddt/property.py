@@ -64,8 +64,8 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('*~[cH]~[#7,#16]', [0.126]),  # C.ar.h.(X)
     ('*~[cH0]', [0.296]),  # C.ar
     ('*~[cH0]~[n,s]', [0.174]),  # C.ar.(X)
-    ('*~[cH0]~[#7!a,#8]', [-0.151]),  # C.ar.x
-    ('[#7!a,#8!a,#16!a]~[cH0]~[a#7,a#8,a#16]', [0.366]),  # C.ar.(X).x
+    ('*~[cH0]-[#7!a,#8]', [-0.151]),  # C.ar.x
+    ('[#7!a,#8!a,#16!a]-[cH0]~[a#7,a#8,a#16]', [0.366]),  # C.ar.(X).x
 
 
     # sp carbon
@@ -246,8 +246,9 @@ def xlogp2_atom_contrib(mol, corrections=True):
     pi_count = [max(sum(any(bond.order > 1 or bond.isaromatic
                             for bond in neighbor.bonds)
                         for neighbor in atom.neighbors
-                        if neighbor.atomicnum in [6, 7]) -
-                    sum(bond.order > 1 or bond.isaromatic
+                        #if neighbor.atomicnum in [6, 7]
+                        ) -
+                    sum(bond.order > 1  # or bond.isaromatic
                         for bond in atom.bonds), 0)
                 for atom in mol]
     atom_contrib = np.zeros(len(pi_count))
