@@ -64,7 +64,7 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('*~[cH]~[#7,#16]', [0.126]),  # C.ar.h.(X)
     ('*~[cH0]', [0.296]),  # C.ar
     ('*~[cH0]~[n,s]', [0.174]),  # C.ar.(X)
-    ('*~[cH0]~[#7!a,#8,#16!a]', [-0.151]),  # C.ar.x
+    ('*~[cH0]~[#7!a,#8]', [-0.151]),  # C.ar.x
     ('[#7!a,#8!a,#16!a]~[cH0]~[a#7,a#8,a#16]', [0.366]),  # C.ar.(X).x
 
 
@@ -79,7 +79,7 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('*=[CX2H0]=*', [2.073]),  # C.1.==
 
     # sp3 nitrogen
-    ('[!#7;!#8;!#1]=[NH2,H3+]', [-0.534, -0.534, -0.329]),  # 41-42
+    ('[!#7;!#8;!#1]=[NH2,H3+]', [-0.534, -0.329]),  # 41-42
     ('[!#7;!#8;!#1]-[NH2,H3+]', [-0.534, -0.329]),  # 41-42
     ('[#7,#8][NH2]', [-1.082]),  # 43
     ('[!#7;!#8;!#1]!:[NH1,H2+]!:[!#7;!#8;!#1]', [-0.112, 0.166]),  # 44-45
@@ -100,8 +100,8 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('[#7,#8]N([!#7;!#8;!#1])[CX3](=[OX1])', [-0.118]),  # 58
 
     # sp2 nitrogen
-    ('[C,S]=N[!#7;!#8;!#1]', [0.007, 0.007, -0.275]),  # 59-60
-    ('C=N[#7,#8]', [0.366, 0.366, 0.251]),  # 61-62
+    ('[C,S]=N[!#7;!#8;!#1]', [0.007, -0.275]),  # 59-60
+    ('C=N[#7,#8]', [0.366, 0.251]),  # 61-62
     ('N=N[!#7;!#8;!#1]', [0.536]),  # 63
     ('N=N[#7,#8]', [-0.597]),  # 64
     ('[*][NX2]=O', [0.427]),  # 65
@@ -122,8 +122,8 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('*~[OX2H1]', [0.084]),  # O.3.unknown
     ('*~[OX2H1]', [-0.467, 0.082]),  # O.3.h.pi=0,1
     ('[#7,#8]~[OH1]', [-0.522]),  # O.3.h.x
-    ('*~[OX2H0]', [0.084, 0.435]),  # O.3.pi=0,1
-    ('[#7,#8]~[OX2H0]', [0.105]),  # O.3.x
+    ('*~[#8X2H0]', [0.084, 0.435]),  # O.3.pi=0,1
+    ('[#7,#8]~[#8X2H0]', [0.105]),  # O.3.x
 
 
     # sp2 oxygen
@@ -137,8 +137,8 @@ XLOGP_SMARTS_1 = OrderedDict([
 
     ('*~[OX1]', [-0.399]),  # O.2
     # ('*=O', [-0.399])  # O.co2
-    ('a:o:a', [-0.399]),  # Custom - aromatic O is sp2
-    ('C@O@C=;@C', [-0.399]),  # Custom - O in ring adjacent to double bond is sp2
+    # ('a:o:a', [-0.399]),  # Custom - aromatic O is sp2
+    # ('C@O@C=;@C', [-0.399]),  # Custom - O in ring adjacent to double bond is sp2
 
     # sp3 sulfur
     ('[*][SH]', [0.419]),  # 76
@@ -243,11 +243,12 @@ def xlogp2_atom_contrib(mol, corrections=True):
     Values are sorted by increasing Pi bonds numbers
     """
     # count Pi bonds in n=2 environment
-    pi_count = [#sum(bond.isaromatic for bond in atom.bonds) +
-                sum(any(bond.order > 1 or bond.isaromatic
-                        for bond in neighbor.bonds)
-                    for neighbor in atom.neighbors
-                    if neighbor.atomicnum in [6, 7])
+    pi_count = [max(sum(any(bond.order > 1 or bond.isaromatic
+                            for bond in neighbor.bonds)
+                        for neighbor in atom.neighbors
+                        if neighbor.atomicnum in [6, 7]) -
+                    sum(bond.order > 1 or bond.isaromatic
+                        for bond in atom.bonds), 0)
                 for atom in mol]
     atom_contrib = np.zeros(len(pi_count))
     for smarts, contrib in XLOGP_SMARTS_1.items():
