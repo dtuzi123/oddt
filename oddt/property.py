@@ -24,8 +24,8 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('[*]=[CH1][#7,#8]', [0.001, 0.001, -0.310]),  # 24-25
     ('[*]=[CH0]([!#7;!#8;!#1])[!#7;!#8;!#1]', [0.050, 0.050, 0.013]),  # 26-27
     ('[O-]-[CH0](=[!#7;!#8;!#1])-[!#7;!#8;!#1]', [0.050, 0.050, 0.013]),  # 26-27
-    ('[*]=[CH0]([!#7;!#8;!#1])[#7,#8;-0]', [-0.030, -0.030, -0.027]),  # 28-29
-    ('[*]=[CH0]([#7,#8])[#7,#8]', [0.005, -0.315]),  # 30-31
+    ('[*]=[CH0]([!#7;!#8;!#1])[#7,#8;-0,+1]', [-0.030, -0.030, -0.027]),  # 28-29
+    ('[*]=[CH0]([#7,#8])[#7,#8;-0,+1]', [0.005, -0.315]),  # 30-31
     ('[0X1][CX3]=[OX1]', [0.050]),  # Custom - caboxyl group C sp2 is 0.05
 
     # aromatic carbon
@@ -33,8 +33,10 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('a:[cH]:[n,#16]', [0.126]),  # 33
     ('c:[cH0]([!#7;!#8;!#1]):c', [0.296]),  # 34
     ('c:[cH0](-,:[#7,#8])-,:[#6]', [-0.151]),  # 35
-    ('a:[cH0]([!#7;!#8;!#1]):[n,#16]', [0.174]),  # 36
-    ('a:[cH0]([#7,#8]):[n,#16]', [0.366]),  # 37
+    ('a:[cH0](:[!#7;!#8;!#1]):[#7,#8,#16]', [0.174]),  # 36
+    # ('a:[cH0](:[!#7;!#8;!#1])-[#7,#8,#16]', [0.174]),  # 36
+    ('a:[cH0](-[!#7;!#8;!#1]):[#7,#8,#16]', [0.174]),  # 36
+    ('a:[cH0]([#7,#8]):[n,o,#16]', [0.366]),  # 37
 
     # sp carbon
     ('[!#7;!#8;!#1]#[CH1]', [0.209]),  # 38
@@ -86,6 +88,8 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('[*]=O', [-0.399]),  # 75
     ('[*]-[OX1-]', [-0.399]),  # 75
     ('[CX3](-[OX1])=O', [-0.399]),  # 75
+    ('a:o:a', [-0.399]),  # 75 Custom - aromatic O is sp2
+    ('C@O@C=;@C', [-0.399]),  # 75 Custom - O in ring adjacent to double bond is sp2
 
     # sp3 sulfur
     ('[*][SH]', [0.419]),  # 76
@@ -127,15 +131,15 @@ XLOGP_SMARTS_2 = [
      'indicator': False,
      'coef': 0.211},
     # Internal H-bond
-    {'smarts': '[O,N;!H0]-*@*=[O,N]',
+    {'smarts': '[O,N;!H0]-;!@*@*=;!@[O,N]',
      'contrib_atoms': [0, 3],
      'indicator': False,
      'coef': 0.429},
-    {'smarts': '[O,N;!H0]-*@*-C=[O,N]',
+    {'smarts': '[O,N;!H0]-;!@*@*-C=;!@[O,N]',
      'contrib_atoms': [0, 4],
      'indicator': False,
      'coef': 0.429},
-    {'smarts': '[O,N;!H0]-C-*@*=[O,N]',
+    {'smarts': '[O,N;!H0]-;!@C-*@*=;!@[O,N]',
      'contrib_atoms': [0, 4],
      'indicator': False,
      'coef': 0.429},
@@ -145,12 +149,12 @@ XLOGP_SMARTS_2 = [
      'indicator': False,
      'coef': 0.137},
     # Aromatic nitrogen 1-4 pair
-    {'smarts': 'n:*:*:n',
+    {'smarts': '[nX2r6]:*:*:[nX2r6]',
      'contrib_atoms': [0, 3],
      'indicator': False,
      'coef': 0.485},
     # Ortho sp3 oxygen pair
-    {'smarts': '[OX2H0R0]-!:aa-!:[OX2H0R0]',
+    {'smarts': '[OX2H0R0]-;!:;!@aa-;!:;!@[OX2H0R0]',
      'contrib_atoms': [0, 3],
      'indicator': False,
      'coef': -0.268},
@@ -190,7 +194,7 @@ def xlogp2_atom_contrib(mol):
     Values are sorted by increasing Pi bonds numbers
     """
     # count Pi bonds in n=2 environment
-    pi_count = [sum(bond.isaromatic for bond in atom.bonds) +
+    pi_count = [#sum(bond.isaromatic for bond in atom.bonds) +
                 sum(any(bond.order > 1 or bond.isaromatic
                         for bond in neighbor.bonds)
                     for neighbor in atom.neighbors
