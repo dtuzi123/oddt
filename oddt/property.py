@@ -22,19 +22,19 @@ XLOGP_SMARTS_1 = OrderedDict([
     # Correction on one internal Pi bond (0 and 1 are duplicated)
     ('[*]=[CH1][!#7;!#8;!#1]', [0.466, 0.466, 0.136]),  # 22-23 +
     ('[*]=[CH1][#7,#8]', [0.001, 0.001, -0.310]),  # 24-25
-    ('[*]=[CH0]([!#7;!#8;!#1])[!#7;!#8;!#1]', [0.050, 0.050, 0.013]),  # 26-27
-    ('[O-]-[CH0](=[!#7;!#8;!#1])-[!#7;!#8;!#1]', [0.050, 0.050, 0.013]),  # 26-27
-    ('[*]=[CH0]([!#7;!#8;!#1])[#7,#8;-0,+1]', [-0.030, -0.030, -0.027]),  # 28-29
+    ('[*]=[CH0]([!#7;!#8;!#1])[!#7;!#8;!#1]', [0.050, 0.013]),  # 26-27
+    ('[O-]-[CH0](=[!#7;!#8;!#1])-[!#7;!#8;!#1]', [0.050, 0.013]),  # 26-27
+    ('[*]=[CH0]([!#7;!#8;!#1])[#7,#8;-0,+1]', [-0.030, -0.027]),  # 28-29
     ('[*]=[CH0]([#7,#8])[#7,#8;-0,+1]', [0.005, -0.315]),  # 30-31
     ('[0X1][CX3]=[OX1]', [0.050, 0.013]),  # Custom - caboxyl group C sp2 is 0.05
 
     # aromatic carbon
     ('a:[cH]:a', [0.337]),  # 32
-    ('a:[cH]:[n,#16]', [0.126]),  # 33
-    ('c:[cH0]([!#7;!#8;!#1]):c', [0.296]),  # 34
+    ('a:[cH]:[n,o,#16]', [0.126]),  # 33
+    ('c:[cH0](~[!#7;!#8;!#1]):c', [0.296]),  # 34
     ('c:[cH0](-,:[#7,#8])-,:[#6]', [-0.151]),  # 35
     ('a:[cH0](:[!#7;!#8;!#1]):[#7,#8,#16]', [0.174]),  # 36
-    # ('a:[cH0](:[!#7;!#8;!#1])-[#7,#8,#16]', [0.174]),  # 36
+    ('a:[cH0](:[!#7;!#8;!#1])=[#7,#8,#16]', [0.174]),  # 36
     ('a:[cH0](-[!#7;!#8;!#1]):[#7,#8,#16]', [0.174]),  # 36
     ('a:[cH0](-[#7,#8]):[n,o,#16]', [0.366]),  # 37
 
@@ -60,12 +60,12 @@ XLOGP_SMARTS_1 = OrderedDict([
     # amide nitrogen
     ('[CX3]([NX3H2])(=[O,S])', [-0.646]),  # 54
     ('[!#7;!#8;!#1][NH1]C(=[O,S])', [-0.096]),  # 55
-    ('[#7,#8][NH]C(=O)[#6]', [-0.044]),  # 56
+    ('[#7,#8][NH]C(=O)[#6,#7]', [-0.044]),  # 56
     ('[!#7;!#8;!#1]N([!#7;!#8;!#1])C(=O)', [0.078]),  # 57
     ('[#7,#8]N([!#7;!#8;!#1])[CX3](=[OX1])', [-0.118]),  # 58
 
     # sp2 nitrogen
-    ('C=N[!#7;!#8;!#1]', [0.007, 0.007, -0.275]),  # 59-60
+    ('[C,S]=N[!#7;!#8;!#1]', [0.007, 0.007, -0.275]),  # 59-60
     ('C=N[#7,#8]', [0.366, 0.366, 0.251]),  # 61-62
     ('N=N[!#7;!#8;!#1]', [0.536]),  # 63
     ('N=N[#7,#8]', [-0.597]),  # 64
@@ -87,13 +87,15 @@ XLOGP_SMARTS_1 = OrderedDict([
     # sp2 oxygen
     ('[*]=O', [-0.399]),  # 75
     ('[*]-[OX1-]', [-0.399]),  # 75
-    ('[CX3](-[OX1])=O', [-0.399]),  # 75
-    ('a:o:a', [-0.399]),  # 75 Custom - aromatic O is sp2
-    ('C@O@C=;@C', [-0.399]),  # 75 Custom - O in ring adjacent to double bond is sp2
+    ('[CX3](-[OX1,OX2H])=[O,N]', [-0.399]),  # 75
+    ('[CX3](-[OX2])-[O-]', [-0.399]),  # 75
+    ('a:o:a', [-0.399]),  # Custom - aromatic O is sp2
+    ('C@O@C=;@C', [-0.399]),  # Custom - O in ring adjacent to double bond is sp2
+    ('C@[#8r5][CX2]', [-0.399]),  # Custom - aromatic O is sp2
 
     # sp3 sulfur
     ('[*][SH]', [0.419]),  # 76
-    ('[*][SX2H0][*]', [0.255]),  # 77
+    ('[*][SX2H0,SX4H0][*]', [0.255]),  # 77
 
     # sp2 sulfur
     ('[*]=[SX1]', [-0.148]),  # 78
@@ -186,7 +188,7 @@ XLOGP_SMARTS_2 = [
 ]
 
 
-def xlogp2_atom_contrib(mol):
+def xlogp2_atom_contrib(mol, corrections=True):
     """
     Atoms contribution values taken from xlogp 2.0 publication:
     https://dx.doi.org/10.1023/A:1008763405023
@@ -211,17 +213,18 @@ def xlogp2_atom_contrib(mol):
                 assert m >= 0
                 atom_contrib[m] = contrib[pi_count[m]] if len(contrib) > pi_count[m] else contrib[-1]
 
-    for correction in XLOGP_SMARTS_2:
-        matches = oddt.toolkit.Smarts(correction['smarts']).findall(mol)
-        if matches:
-            for match in matches:
-                for contrib_idx in correction['contrib_atoms']:
-                    m = match[contrib_idx]
-                    if oddt.toolkit.backend == 'ob':  # OB index is 1-based
-                        m -= 1
-                    assert m >= 0
-                    atom_contrib[m] += correction['coef'] / float(len(correction['contrib_atoms']))
-                    if correction['indicator']:
-                        break
+    if corrections:
+        for correction in XLOGP_SMARTS_2:
+            matches = oddt.toolkit.Smarts(correction['smarts']).findall(mol)
+            if matches:
+                for match in matches:
+                    for contrib_idx in correction['contrib_atoms']:
+                        m = match[contrib_idx]
+                        if oddt.toolkit.backend == 'ob':  # OB index is 1-based
+                            m -= 1
+                        assert m >= 0
+                        atom_contrib[m] += correction['coef'] / float(len(correction['contrib_atoms']))
+                        if correction['indicator']:
+                            break
 
     return atom_contrib
