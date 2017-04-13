@@ -6,6 +6,12 @@ import numpy as np
 import oddt
 
 
+"""
+Reference:
+Wang R, Gao Y, Lai L. Calculating partition coefficient by atom-additive method.
+Perspect Drug Discov Des. Kluwer Academic Publishers; 2000;19: 47–66.
+https://dx.doi.org/10.1023/A:1008763405023
+"""
 XLOGP_SMARTS_1 = OrderedDict([
     # sp3 carbon
     ('*~[CX4]', [0.528]),  # C.3.unknown
@@ -128,6 +134,12 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('[*]I', [1.050, 1.050]),  # 89-90
 ])
 
+"""
+Reference:
+Wang R, Gao Y, Lai L. Calculating partition coefficient by atom-additive method.
+Perspect Drug Discov Des. Kluwer Academic Publishers; 2000;19: 47–66.
+https://dx.doi.org/10.1023/A:1008763405023
+"""
 XLOGP_SMARTS_2 = [
     # Hydrophobic carbon
     {'smarts': '[C;!$([#6]~[!#6]);'
@@ -194,10 +206,14 @@ XLOGP_SMARTS_2 = [
 
 def xlogp2_atom_contrib(mol, corrections=True):
     """
-    Atoms contribution values taken from xlogp 2.0 publication:
+    Atoms contribution values taken from xlogp 2.0 publication. SMARTS patterns
+    are in such orther that the described atom is always second. Values are
+    sorted by increasing Pi bonds numbers.
+
+    Reference:
+    Wang R, Gao Y, Lai L. Calculating partition coefficient by atom-additive method.
+    Perspect Drug Discov Des. Kluwer Academic Publishers; 2000;19: 47–66.
     https://dx.doi.org/10.1023/A:1008763405023
-    SMARTS patterns are in such orther that the described atom is always second.
-    Values are sorted by increasing Pi bonds numbers
     """
     # count Pi bonds in n=2 environment
     pi_count = [sum(any(bond.order > 1 or bond.isaromatic
