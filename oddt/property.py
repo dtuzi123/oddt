@@ -134,7 +134,7 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('*~[NX2]=N', [0.536]),  # N.2.(=N)
     ('[#7,#8]~[NX2]=N', [-0.597]),  # N.2.(=N).x
     ('*~[NX2](=O)', [0.427]),  # N.2.o
-    ('*~[NX3](=O)=,-[O,O-]', [1.178]),  # N.2.o2
+    ('*~[#7X3](=,:*)=,-[O,O-]', [1.178]),  # N.2.o2
 
 
     # aromatic nitrogen
@@ -165,7 +165,8 @@ XLOGP_SMARTS_1 = OrderedDict([
     # ('C@O@C=;@C', [-0.399]),  # Custom - O in ring adjacent to double bond is sp2
     # # ('C@[#8r5][CX2]', [-0.399]),  # Custom - aromatic O is sp2
 
-    ('*~[OX1]', [-0.399]),  # O.2
+    ('*=[OX1]', [-0.399]),  # O.2
+    ('*-[O-]', [-0.399]),  # O.2
     # ('*=O', [-0.399])  # O.co2
     # ('a:o:a', [-0.399]),  # Custom - aromatic O is sp2
     # ('C@O@C=;@C', [-0.399]),  # Custom - O in ring adjacent to double bond is sp2
@@ -185,7 +186,7 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('[*][SX4](=O)(=O)-[*]', [-0.168]),  # 80
 
     # phosphorus
-    ('O=P([*])([*])[*]', [-0.477]),  # 81
+    ('O=P([*])([*])[*]', [-0.447]),  # 81
     ('S=P([*])([*])[*]', [1.253]),  # 82
 
     # fluorine
@@ -273,13 +274,13 @@ def xlogp2_atom_contrib(mol, corrections=True):
     Values are sorted by increasing Pi bonds numbers
     """
     # count Pi bonds in n=2 environment
-    pi_count = [max(sum(any(bond.order > 1 or bond.isaromatic
-                            for bond in neighbor.bonds)
-                        for neighbor in atom.neighbors
-                        #if neighbor.atomicnum in [6, 7]
-                        ) -
-                    sum(bond.order > 1  # or bond.isaromatic
-                        for bond in atom.bonds), 0)
+    pi_count = [sum(any(bond.order > 1 or bond.isaromatic
+                        for bond in neighbor.bonds
+                        if (bond.atoms[0].idx != atom.idx and
+                            bond.atoms[1].idx != atom.idx))
+                    for neighbor in atom.neighbors
+                    if neighbor.atomicnum in [6, 7])
+                if atom.atomicnum > 1 else 0
                 for atom in mol]
     atom_contrib = np.zeros(len(pi_count))
     for smarts, contrib in XLOGP_SMARTS_1.items():
