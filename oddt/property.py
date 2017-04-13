@@ -9,7 +9,7 @@ import oddt
 """
 Reference:
 Wang R, Gao Y, Lai L. Calculating partition coefficient by atom-additive method.
-Perspect Drug Discov Des. Kluwer Academic Publishers; 2000;19: 47–66.
+Perspect Drug Discov Des. Kluwer Academic Publishers; 2000;19: 47-66.
 https://dx.doi.org/10.1023/A:1008763405023
 """
 XLOGP_SMARTS_1 = OrderedDict([
@@ -33,6 +33,7 @@ XLOGP_SMARTS_1 = OrderedDict([
     ('[#7,#8]~[CX3H0]', [-0.030, -0.027]),  # C.2.x.pi=0,1
     ('[#7!a,#8]~[CX3H0]~[#7!a,#8]', [0.005, -0.315]),  # C.2.x2.pi=0,1
     ('[#8,#7H0,H1]~[CX3H0]=[#7,#8]', [-0.030, -0.027]),  # Carboxyl
+    ('[#7!a]-[CX3H0](-[#7!a])=[#7!a]', [-0.315]),  # C.cat => C.2.x2.pi=1
 
     # aromatic carbon
     ('*~c', [0.296]),  # C.ar.unknown
@@ -137,7 +138,7 @@ XLOGP_SMARTS_1 = OrderedDict([
 """
 Reference:
 Wang R, Gao Y, Lai L. Calculating partition coefficient by atom-additive method.
-Perspect Drug Discov Des. Kluwer Academic Publishers; 2000;19: 47–66.
+Perspect Drug Discov Des. Kluwer Academic Publishers; 2000;19: 47-66.
 https://dx.doi.org/10.1023/A:1008763405023
 """
 XLOGP_SMARTS_2 = [
@@ -212,7 +213,7 @@ def xlogp2_atom_contrib(mol, corrections=True):
 
     Reference:
     Wang R, Gao Y, Lai L. Calculating partition coefficient by atom-additive method.
-    Perspect Drug Discov Des. Kluwer Academic Publishers; 2000;19: 47–66.
+    Perspect Drug Discov Des. Kluwer Academic Publishers; 2000;19: 47-66.
     https://dx.doi.org/10.1023/A:1008763405023
     """
     # count Pi bonds in n=2 environment
