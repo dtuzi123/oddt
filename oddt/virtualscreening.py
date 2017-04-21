@@ -3,6 +3,7 @@ from __future__ import print_function
 import sys
 import csv
 import six
+from six.moves import filter
 from os.path import dirname, isfile
 # from multiprocessing.dummy import Pool # threading
 from multiprocessing import Pool  # process
@@ -142,6 +143,25 @@ class virtualscreening:
             else:
                 if eval(expression):
                     yield mol
+
+    def similarity(self, query, fp, cutoff=0.9, protein=None):
+        """
+
+        """
+        if isinstance(query, toolkit.Molecule):
+            query = [query]
+
+        # choose fp and appropriate distance
+        if fp.lower() == 'ifp':
+            fp_gen = IFP
+            dist = discance
+        elif fp.lower() == 'sifp':
+            fp_gen = SIFP
+            dist = discance
+        query_fps = [fp_gen(q) for q in query]
+        self._pipe = filter(lambda x: any(dist(fp_gen(q), q_fp) >= cutoff
+                                          for q_fp in query_fps),
+                            self._pipe)
 
     def dock(self, engine, protein, *args, **kwargs):
         """Docking procedure.

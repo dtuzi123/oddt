@@ -79,6 +79,25 @@ def main():
                        default=[],
                        help='Choose built-in filters to be used (eg. "ro5", "ro3", "pains")')
 
+    # fingerprints
+    group = parser.add_argument_group('Similarity searching')
+    group.add_argument('--fingerprints',
+                       dest='fingerprint',
+                       action='append',
+                       default=[],
+                       help='Choose fingerprints to use (eg. "IFP", "SIFP")')
+
+    group.add_argument('--cutoff',
+                       dest='similarity_cutoff',
+                       type=float,
+                       default=0.9,
+                       help='Similarity cufoff below which molecules will be ignored.')
+
+    group.add_argument('--query',
+                       dest='fp_query',
+                       action='append',
+                       help='Query molecule(s) for similarity searching')
+
     # docking
     group = parser.add_argument_group('Protein-Ligand docking')
     group.add_argument('--dock',
